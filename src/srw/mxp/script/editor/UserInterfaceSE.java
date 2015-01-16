@@ -17,12 +17,22 @@
 package srw.mxp.script.editor;
 
 import java.awt.Color;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
@@ -90,6 +100,9 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         menuFile = new javax.swing.JMenu();
         menuitemOpen = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        menuitemImport = new javax.swing.JMenuItem();
+        menuitemExport = new javax.swing.JMenuItem();
+        jSeparator3 = new javax.swing.JPopupMenu.Separator();
         menuitemSave = new javax.swing.JMenuItem();
         menuitemConvert = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
@@ -309,6 +322,27 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         });
         menuFile.add(menuitemOpen);
         menuFile.add(jSeparator1);
+
+        menuitemImport.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_I, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        menuitemImport.setText("Import lines from txt file...");
+        menuitemImport.setEnabled(false);
+        menuitemImport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuitemImportActionPerformed(evt);
+            }
+        });
+        menuFile.add(menuitemImport);
+
+        menuitemExport.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_E, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        menuitemExport.setText("Export lines to txt file...");
+        menuitemExport.setEnabled(false);
+        menuitemExport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuitemExportActionPerformed(evt);
+            }
+        });
+        menuFile.add(menuitemExport);
+        menuFile.add(jSeparator3);
 
         menuitemSave.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
         menuitemSave.setText("Save as...");
@@ -564,6 +598,38 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_menuitemConvertActionPerformed
 
+    private void menuitemImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuitemImportActionPerformed
+        // TODO add your handling code here:
+        JFileChooser chooser = new JFileChooser();
+        chooser.setCurrentDirectory(new java.io.File(lastDirectory));
+        chooser.setDialogTitle("Import from TXT file");
+        chooser.setFileFilter(new FileNameExtensionFilter("TXT file", "TXT"));
+
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+            saveDialogue();
+
+            importTXT(chooser.getSelectedFile().getParent(), chooser.getSelectedFile().getName());
+
+            lastDirectory = chooser.getSelectedFile().getPath();
+
+            loadDialogue();
+        }
+    }//GEN-LAST:event_menuitemImportActionPerformed
+
+    private void menuitemExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuitemExportActionPerformed
+        // TODO add your handling code here:
+        JFileChooser chooser = new JFileChooser();
+        chooser.setCurrentDirectory(new java.io.File(lastDirectory));
+        chooser.setDialogTitle("Export to TXT file");
+        chooser.setFileFilter(new FileNameExtensionFilter("TXT file", "TXT"));
+
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+            lastDirectory = chooser.getSelectedFile().getPath();
+            
+            exportTXT(chooser.getSelectedFile().getAbsolutePath());
+        }
+    }//GEN-LAST:event_menuitemExportActionPerformed
+
         
     
     public void openFile(String bin_file){
@@ -591,6 +657,10 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         else{
             this.setTitle(current_file + " - " + title);
             loadDialogue();
+            
+            // Enable import option
+            menuitemImport.setEnabled(true);
+            menuitemExport.setEnabled(true);
         }
     }
     
@@ -749,6 +819,194 @@ public class UserInterfaceSE extends javax.swing.JFrame {
     }
     
     
+    public void importTXT(String absolute_path, String filename){
+        try {
+            String translated = "";
+            String line;
+            
+            Path path = FileSystems.getDefault().getPath(absolute_path, filename);
+            BufferedReader br = Files.newBufferedReader(path, Charset.forName(font_encoding));
+            
+            ArrayList<String> readLines = new ArrayList();
+            
+            // Acquire all lines in the TXT file and store them
+            while( (line = br.readLine()) != null){
+                if (line.isEmpty() || line.startsWith("//")){   // Empty line or comment
+                    if (!translated.isEmpty()){ // The translated line is finished. Store the line
+                        readLines.add(translated);
+                        
+                        //System.out.println("Translated: " + translated);
+
+                        // Empty the auxiliary strings
+                        translated = "";
+                    }
+                }
+                else{   // Text line
+                    //line.replaceAll("[male-name]", "#男姓名");
+                    //line.replaceAll("[female-name]", "#女姓名");
+                    //line.replaceAll("[male-nickname]", "#男愛称");
+                    //line.replaceAll("[female-nickname]", "#女愛称");
+                    //line.replaceAll("[mecha-name]", "#機体名");
+                    
+                    line = replaceStrings(line, "[male-name]", "#男姓名");
+                    line = replaceStrings(line, "[female-name]", "#女姓名");
+                    line = replaceStrings(line, "[male-nickname]", "#男愛称");
+                    line = replaceStrings(line, "[female-nickname]", "#女愛称");
+                    line = replaceStrings(line, "[mecha-name]", "#機体名");
+
+                    if(translated.isEmpty())
+                        translated = line;
+                    else
+                        translated += "\n" + line;
+                }
+            }
+            
+            if (!translated.isEmpty()){ // There was no empty line after the last translated line
+                readLines.add(translated);
+                
+                //System.out.println("Translated: " + translated);
+            }
+            
+            if (readLines.size() == script.size()){
+                for (int i = 0; i < script.size(); i++){
+                    script.get(i).edited = readLines.get(i);
+                }
+                
+                System.out.println("Import complete.");
+            }
+            else{   // Error
+                JOptionPane.showMessageDialog(null, "Wrong number of script lines:" +  readLines.size(),
+                    "ERROR", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(UserInterfaceSE.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    // Replaces all occurrences of "search" inside "line" with "change"
+    public String replaceStrings(String line, String search, String change){
+        int pos = line.indexOf(search);
+
+        while (pos != -1){
+            String start = line.substring(0, pos);
+            //String special = line.substring(pos, pos + search.length());
+            String end = line.substring(pos + search.length());
+
+            //if (special.equals("[male-name]"))
+            //    special = "#男姓名";
+
+            line = start + change + end;
+
+            pos = line.indexOf(search);
+        }
+        
+        return line;
+    }
+    
+    
+    public void exportTXT(String filename){
+        try {
+            if (!filename.endsWith(".txt") && !filename.endsWith(".TXT")){
+                filename += ".txt";
+                
+                lastDirectory += ".txt";
+            }
+            
+            FileOutputStream fos = new FileOutputStream(filename);
+            Writer out = new OutputStreamWriter(fos, font_encoding);
+            
+            //Map<String, String> map = new TreeMap();
+            
+            // Print a header for the file
+            String header = "// All lines starting with '//' are comments and won't be used when importing the file.\n"
+                    + "// You can add your own comments before or after a translated message, but not in the middle.\n"
+                    + "// The original script lines are left as comments for reference. Please edit the uncommented lines.\n"
+                    + "// A message can have 3 lines at most. The máximum number of characters per line is 44 (name included).\n"
+                    + "// A line can have more than that, but the text gets shrinked ingame then, so avoid it.\n\n";
+            
+            out.write(header);
+            
+            
+            for (int i = 0; i < script.size(); i++){
+                //if (map.get(script.get(i).original) == null){ // Quote hasn't been written before
+                    //out.write(script.get(i).original + "\n\n" + script.get(i).edited + "\n\n");
+
+                    //map.put(script.get(i).original, script.get(i).edited);
+                //}
+                
+                String number = "";
+                
+                if (i < 1000)
+                    number += "0";
+                if (i < 100)
+                    number += "0";
+                
+                number += i;
+                
+                out.write("// #" + number + "\n");
+                
+                String[] lines = script.get(i).original.split("\n");
+                
+                for (int j = 0; j < lines.length; j++){
+                    out.write("//" + lines[j] + "\n");
+                }
+                
+                out.write("\n");
+                
+                lines = script.get(i).edited.split("\n");
+                
+                //out.write("\n" + script.get(i).edited + "\n\n");
+                
+                for (int j = 0; j < lines.length; j++){
+                    //lines[j].replaceAll("#男姓名", "[male-name]");
+                    //lines[j].replaceAll("#女姓名", "[female-name]");
+                    //lines[j].replaceAll("#男愛称", "[male-nickname]");
+                    //lines[j].replaceAll("#女愛称", "[female-nickname]");
+                    //lines[j].replaceAll("#機体名", "[mecha-name]");
+                    
+                    if (lines[j].contains("#")){
+                        int pos = lines[j].indexOf("#");
+                        
+                        while (pos != -1){
+                            String start = lines[j].substring(0, pos);
+                            String special = lines[j].substring(pos, pos+4);
+                            String end = lines[j].substring(pos+4);
+                            
+                            if (special.equals("#男姓名"))
+                                special = "[male-name]";
+                            else if (special.equals("#女姓名"))
+                                special = "[female-name]";
+                            else if (special.equals("#男愛称"))
+                                special = "[male-nickname]";
+                            else if (special.equals("#女愛称"))
+                                special = "[female-nickname]";
+                            else if (special.equals("#機体名"))
+                                special = "[mecha-name]";
+                            else
+                                special = "[unknown]";
+                            
+                            lines[j] = start + special + end;
+                            
+                            pos = lines[j].indexOf("#");
+                        }
+                    }
+                    
+                    out.write(lines[j] + "\n");
+                }
+                
+                out.write("\n");
+            }
+            
+            out.close();
+            
+            JOptionPane.showMessageDialog(null, "Exported battle quotes:" +  script.size(),//map.size(),
+                    "Done", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException e) {
+            e.printStackTrace();
+}
+    }
+    
+    
     public void saveFile(String path, boolean use_converted){
         //int table_size = script.size() * 4;
         byte[] table = new byte[table_size];
@@ -793,6 +1051,9 @@ public class UserInterfaceSE extends javax.swing.JFrame {
 
             // Write everything into the file
             RandomAccessFile f = new RandomAccessFile(path, "rw");
+            
+            // Truncate the file (in case we're overwriting)
+            f.setLength(0);
 
             f.write(first_section);
             f.write(table);
@@ -1098,6 +1359,7 @@ public class UserInterfaceSE extends javax.swing.JFrame {
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JLabel labelCurrent;
     private javax.swing.JLabel labelJumpTo;
     private javax.swing.JLabel labelWidth;
@@ -1108,7 +1370,9 @@ public class UserInterfaceSE extends javax.swing.JFrame {
     private javax.swing.JMenu menuTools;
     private javax.swing.JMenuItem menuitemClose;
     private javax.swing.JMenuItem menuitemConvert;
+    private javax.swing.JMenuItem menuitemExport;
     private javax.swing.JMenuItem menuitemFirst;
+    private javax.swing.JMenuItem menuitemImport;
     private javax.swing.JMenuItem menuitemLast;
     private javax.swing.JMenuItem menuitemNext;
     private javax.swing.JMenuItem menuitemOpen;
