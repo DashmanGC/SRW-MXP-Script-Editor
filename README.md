@@ -14,6 +14,8 @@ I think it's pretty straightforward, but here's some basics:
 
 3) You have two text areas displaying the script messages. The one on the left shows the text read originally, the one on the right is where you write your translation (initially has the same original text).
 
+* If you're not comfortable using the program to translate, you can go to "File -> Export lines to txt file..." to generate a TXT file with the script lines that you can edit in Notepad++ (for example). This method is recommended, since the application doesn't have an "Undo" option. What you translate in these TXT files can be imported into the editor with "File -> Import lines from txt file...".
+
 4) When writing your translation, keep an eye on the top-right, where you can see how much screen width will be used by the quote. If it turns red, you wrote too much. The game does shrink the lines that are too big to display onscreen, so it's not really a problem, but it's better if you avoid these situations (the shrinked text won't look nice).
 
 5) You can ignore the Tools menu and the "Convert keystrokes to SJIS" option, those are there just in case somebody decides to use VWF in the future.
@@ -41,3 +43,5 @@ IMPORTANT NOTES:
 	- #‹@‘Ì–¼ is the original mech's name.
 
 So, if you run into anything starting with a #, leave the following three characters untouched (consult this little list first). Of course, there could be more codes, if something else is named.
+
+* If you're editing the script using txt files, you won't run into the previous codes. They'll be shown as names between brackets, like "[male-name]".

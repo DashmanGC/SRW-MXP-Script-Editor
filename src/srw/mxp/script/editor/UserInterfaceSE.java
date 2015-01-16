@@ -51,7 +51,7 @@ public class UserInterfaceSE extends javax.swing.JFrame {
     int table_size = 0;
     String lastDirectory = ".";
     boolean file_loaded = false;
-    String title = "SRW MXP Script Editor v1.0b by Dashman";
+    String title = "SRW MXP Script Editor v1.0e by Dashman";
     String current_file = "";
     
     String font_encoding = "MS932";
@@ -116,7 +116,7 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         menuitemSJIS = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("SRW MXP Script Editor 1.0c by Dashman");
+        setTitle("SRW MXP Script Editor 1.0e by Dashman");
         setResizable(false);
 
         panelNavigation.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Navigation", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(51, 102, 255))); // NOI18N
@@ -605,6 +605,11 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         chooser.setDialogTitle("Import from TXT file");
         chooser.setFileFilter(new FileNameExtensionFilter("TXT file", "TXT"));
 
+        if (!current_file.isEmpty()){
+            String name = current_file.substring(0, current_file.length()-5) + ".txt";
+            chooser.setSelectedFile(new File(name));
+        }
+        
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
             saveDialogue();
 
@@ -622,6 +627,9 @@ public class UserInterfaceSE extends javax.swing.JFrame {
         chooser.setCurrentDirectory(new java.io.File(lastDirectory));
         chooser.setDialogTitle("Export to TXT file");
         chooser.setFileFilter(new FileNameExtensionFilter("TXT file", "TXT"));
+        
+        if (!current_file.isEmpty())
+            chooser.setSelectedFile(new File(current_file.substring(0, current_file.length()-5)));
 
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
             lastDirectory = chooser.getSelectedFile().getPath();
